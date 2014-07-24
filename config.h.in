@@ -238,6 +238,9 @@
 /* do not use protochain */
 #undef NO_PROTOCHAIN
 
+/* target host supports netmap odp */
+#undef ODP_HAVE_NETMAP
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -279,6 +282,9 @@
 
 /* use Linux packet ring capture if available */
 #undef PCAP_SUPPORT_PACKET_RING
+
+/* target host supports odp */
+#undef PCAP_SUPPORT_ODP
 
 /* target host supports USB sniffing */
 #undef PCAP_SUPPORT_USB
