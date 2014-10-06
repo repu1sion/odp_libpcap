@@ -6659,7 +6659,6 @@ odp_create(const char *device, char *ebuf, int *is_ours)
 static void
 pcap_odp_init(pcap_t *handle)
 {
-	int thr_id;
 	odp_buffer_pool_t pool;
 	odp_pktio_t pktio;
 	void *pool_base;
@@ -6677,8 +6676,10 @@ pcap_odp_init(pcap_t *handle)
 	}
 
 	/* Create thread structure for ODP */
-	thr_id = odp_thread_create(0);
-	odp_init_local(thr_id);
+	if (odp_init_local()) {
+		ODP_ERR("Error: ODP local init failed.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	/* Is pool have been created in another theard ? */
 	pool = odp_buffer_pool_lookup("packet_pool");
