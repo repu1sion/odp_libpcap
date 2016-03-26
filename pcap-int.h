@@ -42,9 +42,9 @@ extern "C" {
 
 #ifdef PCAP_SUPPORT_ODP
 #include <odp.h>
-#include <odph_linux.h>
-#include <odph_eth.h>
-#include <odph_ip.h>
+#include <linux.h>
+#include <eth.h>
+#include <ip.h>
 #endif /* PCAP_SUPPORT_ODP */
 
 #ifdef WIN32
