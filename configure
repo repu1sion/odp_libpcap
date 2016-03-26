@@ -6113,6 +6113,7 @@ if test "${with_odp+set}" = set; then :
   withval=$with_odp;
 	if test ! "x$withval" = "xno" ; then
 		want_odp=yes
+		ODP_SRC="pcap-odp.c"
 		ODP_INCLS="-I$withval/include -I$withval/include/odp/helper"
 		LIBS="$LIBS -L$withval/lib"
 	fi
