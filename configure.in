@@ -720,7 +720,7 @@ AC_HELP_STRING([--with-odp],[include ODP support]),
 [
 	if test ! "x$withval" = "xno" ; then
 		want_odp=yes
-		ODP_INCLS="-I$withval/include -I$withval/include/helper"
+		ODP_INCLS="-I$withval/include -I$withval/include/odp/helper"
 		LIBS="$LIBS -L$withval/lib"
 	fi
 ],[
