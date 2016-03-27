@@ -457,10 +457,13 @@ odp_create(const char *device, char *ebuf, int *is_ours)
 	return (handle);
 }
 
+//int odp_init_local(odp_thread_type_t thr_type);
+//(odp_init_local(ODP_THREAD_CONTROL)) or odp_init_local(ODP_THREAD_WORKER)
+
 static void
 pcap_odp_init(pcap_t *handle)
 {
-	odp_buffer_pool_t pool;
+	odp_pool_t pool;
 	odp_pktio_t pktio;
 	void *pool_base;
 	char inq_name[ODP_QUEUE_NAME_LEN];
@@ -470,22 +473,39 @@ pcap_odp_init(pcap_t *handle)
 	int ret;
 	struct pcap_odp *podp;
 	odp_shm_t shm;
+	odp_pool_param_t params;
 
 	/* Init ODP before calling anything else */
-	if (odp_init_global()) {
+	if (odp_init_global(NULL, NULL)) {
 		fprintf(stderr, "Error: ODP global init failed.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Create thread structure for ODP */
-	if (odp_init_local()) {
+	if (odp_init_local(ODP_THREAD_WORKER)) {			//XXX - maybe ODP_THREAD_CONTROL ?
 		ODP_ERR("Error: ODP local init failed.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Is pool have been created in another theard ? */
-	pool = odp_buffer_pool_lookup("packet_pool");
-	if (pool == ODP_BUFFER_POOL_INVALID) {
+	pool = odp_pool_lookup("packet_pool");
+	if (pool == ODP_POOL_INVALID) {
+		/* Create packet pool */
+		odp_pool_param_init(&params);			//init pool with default values
+		params.pkt.seg_len = SHM_PKT_POOL_BUF_SIZE;
+		params.pkt.len     = SHM_PKT_POOL_BUF_SIZE;
+		params.pkt.num     = SHM_PKT_POOL_SIZE/SHM_PKT_POOL_BUF_SIZE;
+		params.type        = ODP_POOL_PACKET;
+
+		pool = odp_pool_create("packet_pool", &params);
+
+		if (pool == ODP_POOL_INVALID) {
+			fprintf(stderr, "Error: packet pool create failed.\n");
+			exit(EXIT_FAILURE);
+		}
+		odp_pool_print(pool);
+
+#if 0
 		/* Create packet pool */
 		shm = odp_shm_reserve("shm_packet_pool",
 				SHM_PKT_POOL_SIZE, ODP_CACHE_LINE_SIZE, 0);
@@ -496,16 +516,26 @@ pcap_odp_init(pcap_t *handle)
 			exit(EXIT_FAILURE);
 		}
 
-		pool = odp_buffer_pool_create("packet_pool", pool_base,
+//odp_pool_t odp_pool_create(const char *name, odp_pool_param_t *params);
+		pool_param.type = 0;
+		pool_param.buf.num = 512;	// XXX ? - maybe not 512, just an assumption
+		pool_param.buf.size = SHM_PKT_POOL_BUF_SIZE;
+		pool_param.buf.align = ODP_CACHE_LINE_SIZE;
+		pool = odp_pool_create("packet_pool", &pool_param);
+
+/*
+		pool = odp_pool_create("packet_pool", pool_base,
 				SHM_PKT_POOL_SIZE,
 				SHM_PKT_POOL_BUF_SIZE,
 				ODP_CACHE_LINE_SIZE,
 				ODP_BUFFER_TYPE_PACKET);
-		if (pool == ODP_BUFFER_POOL_INVALID) {
+*/
+		if (pool == ODP_POOL_INVALID) {
 			fprintf(stderr, "Error: packet pool create failed.\n");
 			exit(EXIT_FAILURE);
 		}
-		odp_buffer_pool_print(pool);
+		odp_pool_print(pool);
+#endif
 	} else {
 		fprintf(stdout, "packet pool have been created.\n");
 	}
