@@ -464,16 +464,18 @@ static void
 pcap_odp_init(pcap_t *handle)
 {
 	odp_pool_t pool;
-	odp_pktio_t pktio;
-	void *pool_base;
+	//odp_pktio_t pktio;
+	//void *pool_base;
 	char inq_name[ODP_QUEUE_NAME_LEN];
-	odp_queue_t inq_def;
-	odp_queue_param_t qparam;
+	//odp_queue_t inq_def;
+	//odp_queue_param_t qparam;
 	int fd;
 	int ret;
 	struct pcap_odp *podp;
-	odp_shm_t shm;
+	//odp_shm_t shm;
 	odp_pool_param_t params;
+	odp_pktio_param_t pktio_param;
+        odp_pktin_queue_param_t pktin_param;
 
 	/* Init ODP before calling anything else */
 	if (odp_init_global(NULL, NULL)) {
@@ -544,24 +546,58 @@ pcap_odp_init(pcap_t *handle)
 	/* if any device, need ODP support */
 
 	podp = handle->priv;
+	fprintf(stdout, "packet IO device name : %s\n", handle->opt.source);
 
-	podp->pktio = odp_pktio_open(handle->opt.source, pool);
-	if (podp->pktio == ODP_QUEUE_INVALID) {
+	//----- setting up pktio ------------------------------------------------------
+
+	//setting pktio_param
+        odp_pktio_param_init(&pktio_param);
+	pktio_param.in_mode = ODP_PKTIN_MODE_SCHED;	//XXX - if wont work try MODE_QUEUE
+
+        /* Open a packet IO instance */
+        podp->pktio = odp_pktio_open(handle->opt.source, pool, &pktio_param);
+	if (podp->pktio == ODP_PKTIO_INVALID) {
 		fprintf(stderr, "  Error: pktio create failed %s\n", handle->opt.source);
 		return;
 	}
 
-	/*
-	 * Create and set the default INPUT queue associated with the 'pktio'
-	 * resource
-	 */
+	//setting queue param
+	odp_pktin_queue_param_init(&pktin_param);
+	pktin_param.queue_param.sched.sync = ODP_SCHED_SYNC_ATOMIC;
+	pktin_param.queue_param.sched.prio = ODP_SCHED_PRIO_DEFAULT;
+	pktin_param.queue_param.sched.group = ODP_SCHED_GROUP_DEFAULT;
+
+	//Create and set the default INPUT queue associated with the 'pktio' esource
+/*
 	qparam.sched.prio  = ODP_SCHED_PRIO_DEFAULT;
 	qparam.sched.sync  = ODP_SCHED_SYNC_ATOMIC;
 	qparam.sched.group = ODP_SCHED_GROUP_DEFAULT;
+*/
 	snprintf(inq_name, sizeof(inq_name), "%i-pktio_inq_def",
 		 (int)podp->pktio);
 	inq_name[ODP_QUEUE_NAME_LEN - 1] = '\0';
 
+	if (odp_pktin_queue_config(podp->pktio, &pktin_param))
+	{
+		fprintf(stderr, "  Error: queue config failed %s\n", handle->opt.source);
+		return;
+	}
+
+//XXX - try to start it later if needed.
+#if 0
+        if (odp_pktout_queue_config(pktio, NULL))
+                EXAMPLE_ABORT("Error: pktout config failed for %s\n", dev);
+
+        ret = odp_pktio_start(pktio);
+        if (ret != 0)
+                EXAMPLE_ABORT("Error: unable to start %s\n", dev);
+#endif
+
+
+
+
+
+/*
 	inq_def = odp_queue_create(inq_name, ODP_QUEUE_TYPE_PKTIN, &qparam);
 	if (inq_def == ODP_QUEUE_INVALID) {
 		fprintf(stderr, "  Error: pktio queue creation failed\n");
@@ -573,10 +609,11 @@ pcap_odp_init(pcap_t *handle)
 		fprintf(stderr, "  Error: default input-Q setup\n");
 		return;
 	}
+*/
 
 	printf("  created pktio:%02i, queue mode\n"
-		"  default pktio%02i-INPUT queue:%u\n",
-		podp->pktio, podp->pktio, inq_def);
+		"  default pktio%02i-INPUT queue\n",
+		podp->pktio, podp->pktio);
 
 }
 
