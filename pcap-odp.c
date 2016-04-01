@@ -565,7 +565,7 @@ pcap_odp_init(pcap_t *handle)
 	odp_pktin_queue_param_init(&pktin_param);
 	pktin_param.queue_param.sched.sync = ODP_SCHED_SYNC_ATOMIC;
 	pktin_param.queue_param.sched.prio = ODP_SCHED_PRIO_DEFAULT;
-	pktin_param.queue_param.sched.group = ODP_SCHED_GROUP_DEFAULT;
+	//pktin_param.queue_param.sched.group = ODP_SCHED_GROUP_DEFAULT;
 
 	//Create and set the default INPUT queue associated with the 'pktio' esource
 /*
@@ -573,8 +573,7 @@ pcap_odp_init(pcap_t *handle)
 	qparam.sched.sync  = ODP_SCHED_SYNC_ATOMIC;
 	qparam.sched.group = ODP_SCHED_GROUP_DEFAULT;
 */
-	snprintf(inq_name, sizeof(inq_name), "%i-pktio_inq_def",
-		 (int)podp->pktio);
+	snprintf(inq_name, sizeof(inq_name), "%i-pktio_inq_def", (int)podp->pktio);
 	inq_name[ODP_QUEUE_NAME_LEN - 1] = '\0';
 
 	if (odp_pktin_queue_config(podp->pktio, &pktin_param))
@@ -611,8 +610,7 @@ pcap_odp_init(pcap_t *handle)
 	}
 */
 
-	printf("  created pktio:%02i, queue mode\n"
-		"  default pktio%02i-INPUT queue\n",
+	printf("  created pktio:%02i, queue mode\n default pktio%02i-INPUT queue\n",
 		podp->pktio, podp->pktio);
 
 }
@@ -720,6 +718,7 @@ pcap_read_odp(pcap_t *handle, int max_packets, pcap_handler callback,
 {
 	odp_packet_t pkt;
 	odp_buffer_t buf;
+	odp_event_t ev;		//event for odp_schedule()
 	u_char *bp;
 	struct pcap_linux *handlep = handle->priv;
 	struct pcap_pkthdr pcap_header;
@@ -729,9 +728,10 @@ pcap_read_odp(pcap_t *handle, int max_packets, pcap_handler callback,
 
 	for (n = 1; (n <= max_packets) || (max_packets < 0); n++) {
 		/* Use schedule to get buf from any input queue */
-		buf = odp_schedule(NULL, ODP_SCHED_WAIT);
+		ev = odp_schedule(NULL, ODP_SCHED_WAIT);
+		pkt = odp_packet_from_event(ev);
 
-		pkt = odp_packet_from_buffer(buf);
+		//pkt = odp_packet_from_buffer(buf);
 		if (odp_unlikely(odp_packet_error(pkt)))
 			goto clean_buf; /* Drop */
 
