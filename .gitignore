@@ -45,3 +45,7 @@ selpolltest
 tokdefs.h
 version.c
 version.h
+*.sw?
+Session.vim
+push.sh
+cscope.out
