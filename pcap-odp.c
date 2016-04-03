@@ -41,6 +41,7 @@
 #include "pcap-int.h"
 #include "pcap/sll.h"
 #include "pcap/vlan.h"
+#include "pcap-linux.h"
 
 #ifdef SO_ATTACH_FILTER
 #include <linux/types.h>
@@ -485,7 +486,7 @@ pcap_odp_init(pcap_t *handle)
 
 	/* Create thread structure for ODP */
 	if (odp_init_local(ODP_THREAD_WORKER)) {			//XXX - maybe ODP_THREAD_CONTROL ?
-		ODP_ERR("Error: ODP local init failed.\n");
+		fprintf(stderr, "Error: ODP local init failed.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -717,7 +718,7 @@ pcap_read_odp(pcap_t *handle, int max_packets, pcap_handler callback,
 	      u_char *userdata)
 {
 	odp_packet_t pkt;
-	odp_buffer_t buf;
+	//odp_buffer_t buf;
 	odp_event_t ev;		//event for odp_schedule()
 	u_char *bp;
 	struct pcap_linux *handlep = handle->priv;
@@ -731,15 +732,22 @@ pcap_read_odp(pcap_t *handle, int max_packets, pcap_handler callback,
 		ev = odp_schedule(NULL, ODP_SCHED_WAIT);
 		pkt = odp_packet_from_event(ev);
 
-		//pkt = odp_packet_from_buffer(buf);
+/* [old code]
+		pkt = odp_packet_from_buffer(buf);
 		if (odp_unlikely(odp_packet_error(pkt)))
-			goto clean_buf; /* Drop */
+			goto clean_buf; // Drop
+*/
+
+		if (!odp_packet_is_valid(pkt))
+			continue;
 
 		/* fill out pcap_header */
 		gettimeofday(&ts, NULL);
 		pcap_header.ts = ts;
-		bp = odp_packet_l2(pkt);
-		pcap_header.len	= odp_packet_get_len(pkt);
+		//Returns pointer to the start of the layer 2 header
+		bp = (u_char *)odp_packet_l2_ptr(pkt, NULL);
+		//uint32_t odp_packet_len(odp_packet_t pkt);
+		pcap_header.len	= odp_packet_len(pkt);
 		pcap_header.caplen = pcap_header.len;
 
 		/* ODP not yet support filtering_in_kernel */
@@ -757,7 +765,7 @@ pcap_read_odp(pcap_t *handle, int max_packets, pcap_handler callback,
 
 clean_buf:
 		handlep->packets_read++;
-		odp_buffer_free(buf);
+		//odp_buffer_free(buf);
 
 		if (handle->break_loop) {
 			handle->break_loop = 0;

@@ -147,6 +147,7 @@
 #include "pcap-int.h"
 #include "pcap/sll.h"
 #include "pcap/vlan.h"
+#include "pcap-linux.h"
 
 /*
  * If PF_PACKET is defined, we can use {SOCK_RAW,SOCK_DGRAM}/PF_PACKET
@@ -338,7 +339,6 @@ static short int map_packet_type_to_sll_type(short int);
 #endif
 static int pcap_activate_linux(pcap_t *);
 static int activate_old(pcap_t *);
-static int activate_new(pcap_t *);
 static int activate_mmap(pcap_t *, int *);
 static int pcap_can_set_rfmon_linux(pcap_t *);
 static int pcap_read_linux(pcap_t *, int, pcap_handler, u_char *);
@@ -3146,7 +3146,7 @@ static void map_arphrd_to_dlt(pcap_t *handle, int sock_fd, int arptype,
  * PCAP_ERROR_ value on an error that means that the old mechanism won't
  * work either (so it shouldn't be tried).
  */
-static int
+int
 activate_new(pcap_t *handle)
 {
 #ifdef HAVE_PF_PACKET_SOCKETS
