@@ -583,19 +583,15 @@ pcap_odp_init(pcap_t *handle)
 		return;
 	}
 
-//XXX - try to start it later if needed.
-#if 0
-        if (odp_pktout_queue_config(pktio, NULL))
-                EXAMPLE_ABORT("Error: pktout config failed for %s\n", dev);
+	//set OUT queue. NULL as param means default values will be used
+        if (odp_pktout_queue_config(podp->pktio, NULL))
+                fprintf(stderr, "Error: pktout config failed for %s\n", dev);
 
-        ret = odp_pktio_start(pktio);
+	
+	fprintf(stdout, "going to start\n");
+        ret = odp_pktio_start(podp->pktio);
         if (ret != 0)
-                EXAMPLE_ABORT("Error: unable to start %s\n", dev);
-#endif
-
-
-
-
+                fprintf(stderr, "Error: unable to start %s\n", dev);
 
 /*
 	inq_def = odp_queue_create(inq_name, ODP_QUEUE_TYPE_PKTIN, &qparam);
@@ -613,7 +609,6 @@ pcap_odp_init(pcap_t *handle)
 
 	printf("  created pktio:%02i, queue mode\n default pktio%02i-INPUT queue\n",
 		podp->pktio, podp->pktio);
-
 }
 
 static int
@@ -675,6 +670,7 @@ pcap_activate_odp(pcap_t *handle)
 
 	/* + activate_new */
 	/* Will create a sock_fd just for setting */
+	fprintf(stdout, "going to activate_new()\n");
 	status = activate_new(handle);
 	if (status < 0)
 		goto fail;
@@ -726,6 +722,8 @@ pcap_read_odp(pcap_t *handle, int max_packets, pcap_handler callback,
 	struct timeval ts;
 	long n = 1;
 	struct pcap_odp *podp = handle->priv;
+
+	fprintf(stdout, "pcap_read_odp()\n");
 
 	for (n = 1; (n <= max_packets) || (max_packets < 0); n++) {
 		/* Use schedule to get buf from any input queue */
@@ -781,6 +779,7 @@ pcap_cleanup_odp(pcap_t *handle)
 {
 	struct pcap_odp *podp = handle->priv;
 
+	odp_pktio_stop(podp->pktio);
 	odp_pktio_close(podp->pktio);
 	pcap_cleanup_linux_odp(handle);
 }
