@@ -585,13 +585,13 @@ pcap_odp_init(pcap_t *handle)
 
 	//set OUT queue. NULL as param means default values will be used
         if (odp_pktout_queue_config(podp->pktio, NULL))
-                fprintf(stderr, "Error: pktout config failed for %s\n", dev);
+                fprintf(stderr, "Error: pktout config failed\n");
 
 	
-	fprintf(stdout, "going to start\n");
+	fprintf(stdout, "going to start pktio\n");
         ret = odp_pktio_start(podp->pktio);
         if (ret != 0)
-                fprintf(stderr, "Error: unable to start %s\n", dev);
+                fprintf(stderr, "Error: unable to start pktio\n");
 
 /*
 	inq_def = odp_queue_create(inq_name, ODP_QUEUE_TYPE_PKTIN, &qparam);
