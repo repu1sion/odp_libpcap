@@ -490,7 +490,7 @@ pcap_odp_init(pcap_t *handle)
 		exit(EXIT_FAILURE);
 	}
 
-	/* Is pool have been created in another theard ? */
+	/* Is pool have been created in another thread ? */
 	pool = odp_pool_lookup("packet_pool");
 	if (pool == ODP_POOL_INVALID) {
 		/* Create packet pool */
@@ -723,9 +723,10 @@ pcap_read_odp(pcap_t *handle, int max_packets, pcap_handler callback,
 	long n = 1;
 	struct pcap_odp *podp = handle->priv;
 
-	fprintf(stdout, "pcap_read_odp()\n");
+	fprintf(stdout, "pcap_read_odp() start\n");
 
 	for (n = 1; (n <= max_packets) || (max_packets < 0); n++) {
+		fprintf(stdout, "loop iteration\n");
 		/* Use schedule to get buf from any input queue */
 		ev = odp_schedule(NULL, ODP_SCHED_WAIT);
 		pkt = odp_packet_from_event(ev);
@@ -771,6 +772,7 @@ clean_buf:
 		}
 	}
 
+	fprintf(stdout, "pcap_read_odp() end\n");
 	return max_packets;
 }
 
