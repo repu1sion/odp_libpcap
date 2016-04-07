@@ -722,6 +722,7 @@ pcap_read_odp(pcap_t *handle, int max_packets, pcap_handler callback,
 	struct timeval ts;
 	long n = 1;
 	struct pcap_odp *podp = handle->priv;
+	int processed_packets = 0;
 
 	fprintf(stdout, "pcap_read_odp() start\n");
 
@@ -763,8 +764,10 @@ pcap_read_odp(pcap_t *handle, int max_packets, pcap_handler callback,
 		callback(userdata, &pcap_header, bp);
 
 clean_buf:
+		processed_packets++;
 		handlep->packets_read++;
-		//odp_buffer_free(buf);
+		odp_packet_free(pkt);
+		fprintf(stdout, "freeing packet #%d \n", processed_packets);
 
 		if (handle->break_loop) {
 			handle->break_loop = 0;
